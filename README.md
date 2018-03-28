@@ -1,1 +1,1 @@
-# `process-sim`, a simulator of communicating processes
+# `process-sim`, a simulation environment for communicating processes

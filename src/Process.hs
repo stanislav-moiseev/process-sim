@@ -16,6 +16,7 @@ type Message = String
 data Instr cont
   = Send Channel Message cont
   | Receive Channel (Message -> cont)
+  | Fork [Process ()] cont
   | Say String cont
   | Exit
   deriving (Functor)
@@ -27,6 +28,9 @@ send ch msg = liftF $ Send ch (show msg) ()
 
 receive :: (Read a) => Channel -> Process a
 receive ch = liftM read $ liftF $ Receive ch id
+
+fork :: [Process ()] -> Process ()
+fork plist = liftF $ Fork plist ()
 
 say :: String -> Process ()
 say str = liftF $ Say str ()
