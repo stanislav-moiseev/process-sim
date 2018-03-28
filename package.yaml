@@ -1,0 +1,21 @@
+name:           process-sim
+synopsis:       A simulation environment for communicating processes
+maintainer:     Stanislav Moiseev <stanislav.moiseev@gmail.com>
+copyright:      (C) 2018 Stanislav Moiseev
+
+extra-source-files:
+  - README.md
+
+dependencies:
+  - ansi-terminal
+  - base >= 4.7 && < 5
+  - containers
+  - free
+  - transformers
+  - random
+  - time
+  
+library:
+  source-dirs:
+    - src
+
