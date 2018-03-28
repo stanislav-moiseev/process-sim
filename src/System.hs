@@ -55,8 +55,7 @@ processStep sender_pid (Free (Send ch msg sender)) = do
     Nothing -> do
       queue <- gets queue
       send_queue <- gets send_queue
-      modify $ \s -> s { send_queue = M.insertWith (flip (++)) ch [(sender_pid, msg)] send_queue
-                       , queue = queue ++ [(sender_pid, sender)] }
+      modify $ \s -> s { send_queue = M.insertWith (flip (++)) ch [(sender_pid, msg, sender)] send_queue }
 
     Just ((receiver_pid, receiver) : others) -> do
       logProcMsg sender_pid receiver_pid ch msg
@@ -71,12 +70,12 @@ processStep receiver_pid (Free (Receive ch receiver)) = do
   case ch `M.lookup` send_queue of
     Nothing -> do
       receive_queue <- gets receive_queue
-      modify $ \s -> s { receive_queue = M.insertWith (++) ch [(receiver_pid, receiver)] receive_queue }
+      modify $ \s -> s { receive_queue = M.insertWith (flip (++)) ch [(receiver_pid, receiver)] receive_queue }
 
-    Just ((sender_pid, msg) : others) -> do
+    Just ((sender_pid, msg, sender) : others) -> do
       logProcMsg sender_pid receiver_pid ch msg
       queue <- gets queue
-      modify $ \s -> s { queue      = queue ++ [(receiver_pid, receiver msg)]
+      modify $ \s -> s { queue      = queue ++ [(receiver_pid, receiver msg), (sender_pid, sender)]
                        , send_queue = if null others
                                       then ch `M.delete` send_queue
                                       else M.insert ch others send_queue }
@@ -130,7 +129,10 @@ system = do
       -- Randomly select the next process to run.
       pos <- lift $ randomRIO (0, length queue - 1)
       let (pid, p) = queue !! pos
+      
+      -- Delete the selected process from the list of running processes.
       modify $ \s -> s { queue = (take pos queue) ++ (drop (pos+1) queue) }
+      
       processStep pid p
       system
 

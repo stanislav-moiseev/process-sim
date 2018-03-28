@@ -56,7 +56,7 @@ data SystemState = SystemState
 
   , -- ^ Messages sent previously by not received yet.
     -- @PID@ refers to sender's PID.
-    send_queue    :: M.Map Channel [(PID, Message)]
+    send_queue    :: M.Map Channel [(PID, Message, Process ())]
 
   , -- ^ Continuations for parent processes that have forked into
     -- subprocesses and are waiting for the subprocesses to finish.

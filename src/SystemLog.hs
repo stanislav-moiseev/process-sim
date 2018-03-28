@@ -48,9 +48,9 @@ logSymDeadlocks = do
 
   lift $ ANSI.setSGR [SetColor Foreground Vivid Yellow]
   when (not $ M.null send_queue) $ do
-    lift $ printf "\nList of undelivered messages:\n"
+    lift $ printf "\nList of processes waiting to send a message:\n"
     forM_ (M.toList send_queue) $ \(ch, senders) ->
-      forM_ senders $ \(sender_pid, msg) -> do
+      forM_ senders $ \(sender_pid, msg, _) -> do
         sender_name <- getProcName sender_pid
         lift $ printf "  | from process %-6s channel %-8s message %s\n"
                       ("[" ++ sender_name ++ "]")

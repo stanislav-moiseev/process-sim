@@ -36,15 +36,14 @@ proc in_ch out_ch = do
                            ]
     let x = read x'
       
-    lift $ say $ printf "my = %d; x = %d; m = %d; y = %d; counter = %d" my x m y counter
-    
     modify $ \s -> s { y = x
                      , m = max m x
                      , counter = counter + 1 }
 
+    ProcState my m y counter <- get
+    lift $ say $ printf "my = %d; x = %d; m = %d; y = %d; counter = %d" my x m y counter
+
     when (x == my) $ do
-      ProcState my m y counter <- get
-      lift $ say $ printf "my = %d; x = %d; m = %d; y = %d; counter = %d" my x m y counter
       if (my == m)
         then lift $ say "I'm the leader."
         else lift $ say $ printf "The leader has number %d." m
