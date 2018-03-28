@@ -1,42 +1,52 @@
-module System (runSystem) where
+module System (runSystem, ProcessName) where
 
 import           Control.Monad
 import           Control.Monad.Free
 import           Control.Monad.Trans.Class
 import           Control.Monad.Trans.State.Strict
-import           Data.Maybe
+import           Data.List
 import qualified Data.Map.Strict                  as M
+import           Data.Maybe
 
 import           Data.Time.Clock.System
 import           System.Random
 
-import           SystemTypes
-import           SystemLog
 import           Process
+import           SystemLog
+import           SystemTypes
 
 processStep :: PID -> Process () -> SystemM ()
 
-processStep pid (Pure a) = processStep pid (Free Exit)
+processStep pid (Pure msg) = processStep pid (Free (Exit (show msg)))
 
-processStep pid (Free Exit) = do
+processStep pid (Free (Exit msg)) = do
   -- Check if this process is a child process of another process.
   info <- gets info
   let p_info = fromJust $ pid `M.lookup` info
   case parent p_info of
-    Nothing         -> logProcTerm pid
+    Nothing         -> do -- We log only primary processes when they
+                          -- terminate, not subprocesses.
+                          logProcTerm pid
+
     Just parent_pid -> do
       -- Decrease parent's counter.
       parents <- gets parents
-      let (counter, parent) = fromJust $ parent_pid `M.lookup` parents
+      let ParentProcessStatus counter msgs parent = fromJust $ parent_pid `M.lookup` parents
+
       if counter >= 2
         then do
           -- Decrease the counter.
-          modify $ \s -> s { parents = M.insert parent_pid (counter-1, parent) parents }
+          modify $ \s -> s { parents = M.insert parent_pid (ParentProcessStatus (counter-1) ((pid, msg) : msgs) parent) parents }
+
         else do
-          -- Wake the parent up.
           modify $ \s -> s { parents = M.delete parent_pid parents }
+          -- Wake the parent up.
           queue <- gets queue
-          modify $ \s -> s { queue = queue ++ [(parent_pid, parent)] }
+          -- We sort messages to get them in the right order. We
+          -- assume here that PIDs of the child processes were
+          -- assigned in ascending order.
+          let msgs' = map snd $ sort $ (pid, msg) : msgs
+          modify $ \s -> s { queue = queue ++ [(parent_pid, parent msgs')] }
 
 
 processStep sender_pid (Free (Send ch msg sender)) = do
@@ -74,8 +84,8 @@ processStep receiver_pid (Free (Receive ch receiver)) = do
 processStep parent_pid (Free (Fork plist parent_cont))
   | null plist = do
       queue <- gets queue
-      modify $ \s -> s { queue = queue ++ [(parent_pid, parent_cont)] }
-      
+      modify $ \s -> s { queue = queue ++ [(parent_pid, parent_cont [])] }
+
   | otherwise = do
       -- Create child processes.
       forM_ (zip [0..] plist) $ \(sub_idx, child_proc) -> do
@@ -89,12 +99,12 @@ processStep parent_pid (Free (Fork plist parent_cont))
         modify $ \s -> s { info = M.insert child_pid (ProcessInfo child_name (Just parent_pid)) info }
         -- Schedule the child process.
         modify $ \s -> s { queue = queue ++ [(child_pid, child_proc)] }
-                         
+
       -- Freeze the parent process and put it to the list of processes
       -- waiting for their children to terminate.
       parents <- gets parents
-      modify $ \s -> s { parents = M.insert parent_pid (length plist, parent_cont) parents }
-        
+      modify $ \s -> s { parents = M.insert parent_pid (ParentProcessStatus (length plist) [] parent_cont) parents }
+
 
 processStep pid (Free (Say str cont)) = do
   logProcSays pid str
@@ -111,9 +121,10 @@ system = do
       -- Check if there is a deadlock.
       receive_queue <- gets receive_queue
       send_queue <- gets send_queue
-      if M.null receive_queue && M.null send_queue
+      parents <- gets parents
+      if M.null receive_queue && M.null send_queue && M.null parents
         then logSymSuccess
-        else logSymDeadlocks send_queue receive_queue
+        else logSymDeadlocks
 
     _  -> do
       -- Randomly select the next process to run.
@@ -136,6 +147,7 @@ runSystem procs = do
                           | (pid, proc) <- zip [0..] (map snd procs)]
         , receive_queue = M.empty
         , send_queue    = M.empty
-        , parents       = M.empty }
+        , parents       = M.empty
+        }
   runStateT system initial_state
   return ()

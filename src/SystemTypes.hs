@@ -16,13 +16,31 @@ type ProcessName = String
 
 data ProcessInfo = ProcessInfo
   { name   :: ProcessName
-    -- If the current process is a fork of some parent process, then
+  
+  , -- If the current process is a fork of some parent process, then
     -- @parent@ denotes the PID of the parent process; otherwise, it
     -- is set to @Nothing@.
-  , parent :: Maybe PID
+    parent :: Maybe PID
   }
 
+data ParentProcessStatus = ParentProcessStatus
+  { -- ^ @counter@ denotes the number of subprocesses being waited for
+    -- by the parent process.
+    --
+    -- When a subprocess finishes, the parent's counter decreases
+    -- by 1. When the counter comes to zero, the parent process
+    -- wakes up.
+    counter :: Int
 
+  , -- A list of child processes PIDs and messages returned they
+    -- returned upon termination.
+    msgs :: [(PID, RetValue)]
+  
+  , -- ^ Continuation for the parent process that should process the
+    -- messages returned by the children.
+    cont :: [RetValue] -> Process ()
+  }
+     
 data SystemState = SystemState
   { next_pid      :: PID
 
@@ -41,16 +59,8 @@ data SystemState = SystemState
     send_queue    :: M.Map Channel [(PID, Message)]
 
   , -- ^ Continuations for parent processes that have forked into
-    -- subprocesses and are waiting for the subprocess to finish.
-    --
-    -- > parents pid = (counter, cont),
-    --
-    -- where @counter@ denotes the number of subprocesses being waited
-    -- for, and @cont@ is the continuation of the parent process.
-    --
-    -- When a sbprocess finishes, the parent's counter decreases by 1;
-    -- when the counter comes to zero, the parent process wakes up.
-    parents       :: M.Map PID (Int, Process ())
+    -- subprocesses and are waiting for the subprocesses to finish.
+    parents       :: M.Map PID ParentProcessStatus
   }
 
 

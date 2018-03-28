@@ -14,7 +14,10 @@ dependencies:
   - transformers
   - random
   - time
+
+ghc-options:
   
+
 library:
   source-dirs:
     - src
