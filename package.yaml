@@ -19,3 +19,11 @@ library:
   source-dirs:
     - src
 
+executables:
+  test1:
+    main: Test1.hs
+    source-dirs:
+      - test
+    dependencies:
+      - process-sim
+
