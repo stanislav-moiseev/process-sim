@@ -27,8 +27,15 @@ proc in_ch out_ch = do
 
   forever $ do
     ProcState my m y counter <- get
-    lift $ send out_ch y
-    x <- lift $ receive in_ch
+
+    -- Send and receive a message in parallel threads.
+    [_, x'] <- lift $ fork [ do send out_ch y
+                           
+                           , do (x::Int) <- receive in_ch
+                                exit x
+                           ]
+    let x = read x'
+      
     lift $ say $ printf "my = %d; x = %d; m = %d; y = %d; counter = %d" my x m y counter
     
     modify $ \s -> s { y = x
@@ -41,7 +48,8 @@ proc in_ch out_ch = do
       if (my == m)
         then lift $ say "I'm the leader."
         else lift $ say $ printf "The leader has number %d." m
-      lift $ exit
+      lift $ exit ()
+
 
 -- | 'genCircle' creates @num@ processes and communication channels
 -- between them. The processes are connected in a circular manner:
@@ -58,3 +66,4 @@ genCircle num =
     channel p1 p2 = Channel $ printf "%d-%d" p1 p2
 
 main = runSystem $ genCircle 4
+
