@@ -16,7 +16,8 @@ dependencies:
   - time
 
 ghc-options:
-  
+  - -O2
+  - -threaded
 
 library:
   source-dirs:
@@ -24,9 +25,12 @@ library:
 
 executables:
   test1:
-    main: Test1.hs
-    source-dirs:
-      - test
+    main: test/Test1.hs
+    dependencies:
+      - process-sim
+
+  test2:
+    main: test/Test2.hs
     dependencies:
       - process-sim
 
