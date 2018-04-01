@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE DeriveFunctor #-}
 
-module Process where
+module Operational.Process where
 
 import           Control.Monad
 import           Control.Monad.Free

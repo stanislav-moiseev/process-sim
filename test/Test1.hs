@@ -7,8 +7,8 @@ import           Control.Monad.Trans.Class
 import           Control.Monad.Trans.State.Strict
 import           Text.Printf
 
-import           Process
-import           System
+import           Operational.Process
+import           Operational.System
 
 data ProcState = ProcState
   { my      :: Int      -- ^ The number assigned to the process at start-up.

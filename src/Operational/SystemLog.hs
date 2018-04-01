@@ -1,4 +1,4 @@
-module SystemLog where
+module Operational.SystemLog where
 
 import           Control.Monad
 import           Control.Monad
@@ -9,8 +9,8 @@ import qualified Data.Map.Strict                  as M
 import           System.Console.ANSI              as ANSI
 import           Text.Printf
 
-import           Process
-import           SystemTypes
+import           Operational.Process
+import           Operational.SystemTypes
 
 logProcTerm pid = do
   p_name <- getProcName pid

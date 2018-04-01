@@ -1,4 +1,4 @@
-module System (runSystem, ProcessName) where
+module Operational.System (runSystem, ProcessName) where
 
 import           Control.Monad
 import           Control.Monad.Free
@@ -11,9 +11,9 @@ import           Data.Maybe
 import           Data.Time.Clock.System
 import           System.Random
 
-import           Process
-import           SystemLog
-import           SystemTypes
+import           Operational.Process
+import           Operational.SystemLog
+import           Operational.SystemTypes
 
 processStep :: PID -> Process () -> SystemM ()
 

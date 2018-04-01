@@ -1,11 +1,11 @@
-module SystemTypes where
+module Operational.SystemTypes where
 
 import           Control.Monad
 import           Control.Monad.Trans.State.Strict
 import qualified Data.Map.Strict                  as M
 import           Text.Printf
 
-import           Process
+import           Operational.Process
 
 -- | Internal process identifier.
 newtype PID = PID Int
