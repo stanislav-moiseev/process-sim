@@ -22,3 +22,5 @@ cabal.project.local
 
 *.cabal
 stack.yaml
+.emacs.desktop
+.emacs.desktop.lock

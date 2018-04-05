@@ -6,6 +6,8 @@ import           Control.Monad
 import           Control.Monad.Trans.Class
 import           Control.Monad.Trans.State.Strict
 import           Text.Printf
+import           System.Environment
+
 
 import           Operational.Process
 import           Operational.System
@@ -64,5 +66,10 @@ genCircle num =
   where
     channel p1 p2 = Channel $ printf "%d-%d" p1 p2
 
-main = runSystem $ genCircle 4
+main = do
+  args <- getArgs
+  case args of
+    (n:_) -> runSystem $ genCircle $ read n
+    _     -> do prog_name <- getProgName
+                printf "Usage: %s [number-of-processes]\n" prog_name
 

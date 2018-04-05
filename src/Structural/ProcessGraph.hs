@@ -34,11 +34,8 @@ type ProcessGraph s msg = s -> [Trans s msg]
 --
 -- Here @s@ denotes the data type of states of individual processes in the
 -- composition. And @[s]@ describes the state of the composed process.
-data ComposedState s = Active [s] | Stopped [s] | Deadlock [s]
+data ComposedStateStatus = Active | Stopped | Deadlock
   deriving (Eq, Ord, Show)
-
-isActive (Active _) = True
-isActive _          = False
 
 -- | @step@ makes one computation step of the composed process.
 -- It accepts a list of processes @procs@ and their initial states @states@
@@ -77,10 +74,10 @@ isActive _          = False
 -- * If /no/ rule is applicable to some composed state (s1,...,sn),
 --   then the process does not change state, and we mark the state as 'Deadlock'.
 --
-step :: (Eq s) => [ProcessGraph s msg] -> ComposedState s -> [ComposedState s]
-step procs (Stopped states) = [Stopped states]
-step procs (Deadlock states) = [Deadlock states]
-step procs (Active states) =
+step :: (Eq s) => [ProcessGraph s msg] -> (ComposedStateStatus, [s]) -> [(ComposedStateStatus, [s])]
+step procs (Stopped, states)  = [(Stopped, states)]
+step procs (Deadlock, states) = [(Deadlock, states)]
+step procs (Active, states) =
   -- Get a list of possible transitions for every process and compute all the
   -- combinations of transitions.
   --
@@ -106,8 +103,9 @@ step procs (Active states) =
                              , let states' = updateList k1 s1' $ updateList k2 (cont2 msg) states] in
 
   if null $ stop_rules ++ tau_rules ++ react_rules
-     then [ Deadlock states ]
-     else nub $ (map Stopped stop_rules) ++ (map Active $ tau_rules ++ react_rules)
+     then [ (Deadlock, states) ]
+     else nub $ (map (\s -> (Stopped,s)) stop_rules) ++
+                (map (\s -> (Active,s)) $ tau_rules ++ react_rules)
 
   where
     updateList :: Int -> a -> [a] -> [a]
@@ -126,8 +124,8 @@ step procs (Active states) =
 -- deadlock.
 --
 -- If there is a loop is the process graph, @eval@ will return an infinite list.
-eval :: Eq s => [ProcessGraph s msg] -> [ComposedState s] -> [[ComposedState s]]
+eval :: Eq s => [ProcessGraph s msg] -> [s] -> [[(ComposedStateStatus, [s])]]
 eval procs states =
-  let trace = iterate (nub . concatMap (step procs)) $ states
-      (prefix, suffix) = span (any isActive) trace in
+  let trace = iterate (nub . concatMap (step procs)) [(Active, states)]
+      (prefix, suffix) = span (any (\(status, states) -> status == Active)) trace in
   prefix ++ [head suffix]
