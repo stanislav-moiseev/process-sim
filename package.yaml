@@ -17,7 +17,6 @@ dependencies:
 
 ghc-options:
   - -O2
-  - -threaded
 
 library:
   source-dirs:
@@ -28,9 +27,20 @@ executables:
     main: test/Test1.hs
     dependencies:
       - process-sim
+    ghc-options:
+      - -O2
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
 
   test2:
     main: test/Test2.hs
     dependencies:
       - process-sim
+    ghc-options:
+      - -O2
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+
 
