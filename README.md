@@ -21,6 +21,6 @@
  4. Run tests:
 
     ```
-    stack exec test1
-    stack exec test2 <number-of-processes>
+    stack exec test1 [number-of-processes]
+    stack exec test2 [number-of-processes]
     ```
