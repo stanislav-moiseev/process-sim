@@ -32,8 +32,8 @@ proc my in_ch out_ch p@(ProcState s x y m counter leader) =
                    , y = x
                    , m = max m x
                    , counter = counter + 1 } ]
-    5 -> [ Tau $ if x /= my then p { s = 1 }
-                            else p { s = 6, leader = Just (my == m) } ]
+    5 -> (guard (x /= my) >> [ Tau $ p { s = 1 } ]) ++
+         (guard (x == my) >> [ Tau $ p { s = 6, leader = Just (my == m) } ])
     6 -> [ Stop ]
 
 procInv
